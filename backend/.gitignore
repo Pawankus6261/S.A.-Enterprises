@@ -1,1 +1,5 @@
 .env
+# .gitignore file ke andar
+
+__pycache__/
+*.pyc
