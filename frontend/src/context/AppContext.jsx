@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios'; // Ensure you install axios: npm install axios
 
 const AppContext = createContext();
-const API_URL = "http://127.0.0.1:8000"; // Python Backend URL
+const API_URL = import.meta.env.PROD ? "/api" : "http://127.0.0.1:8000"; // Dynamic URL
 
 export const AppProvider = ({ children }) => {
   const [consumers, setConsumers] = useState([]);
