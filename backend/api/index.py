@@ -5,5 +5,4 @@ from fastapi.responses import JSONResponse
 @app.get("/api")
 def api_root():
     return JSONResponse({"status": "Backend running on Vercel"})
-from backend.main import app
 
