@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Lock, Droplets } from 'lucide-react';
-import saLogo from '../assets/logo.png'; 
+import saLogo from '../assets/LOGO.png'; 
 
 export default function LandingPage() {
   const navigate = useNavigate();
