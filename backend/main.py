@@ -18,6 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/")
+def root():
+    return {"message": "Welcome to S.A. Enterprises"}
 # --- 1. CONSUMER ROUTES ---
 
 @app.post("/consumers/", response_model=schemas.ConsumerResponse)
