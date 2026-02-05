@@ -3,7 +3,7 @@ import axios from 'axios'; // Ensure you install axios: npm install axios
 
 const AppContext = createContext();
 // Use VITE_API_URL if defined (prod), else localhost (dev)
-const API_URL = import.meta.env.VITE_API_URL || "https://s-a-enterprises.vercel.app/";
+const API_URL = import.meta.env.VITE_API_URL || "https://s-a-enterprises.onrender.com/";
 
 export const AppProvider = ({ children }) => {
   const [consumers, setConsumers] = useState([]);
