@@ -110,7 +110,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const loginAdmin = (u, p) => {
-    if (u === 'admin' && p === '1234') {
+    if (u === 'AdminSA' && p === 'SA@#$7060') {
       const adminUser = { role: 'admin', name: 'Owner' };
       setUser(adminUser);
       localStorage.setItem('sa_user', JSON.stringify(adminUser));
