@@ -1,6 +1,6 @@
 import { Home, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import saLogo from '../assets/sa-logo.png'; // Import here too
+import saLogo from '../assets/LOGO.png'; // Import here too
 
 export default function Navbar() {
   const loc = useLocation();
