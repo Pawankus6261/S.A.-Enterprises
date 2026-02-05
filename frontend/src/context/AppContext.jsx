@@ -43,7 +43,9 @@ export const AppProvider = ({ children }) => {
         name: newConsumer.name,
         mobile: newConsumer.mobile,
         house_no: newConsumer.house_no,
-        area: newConsumer.area
+        area: newConsumer.area,
+        // Send custom_rate (convert to float or null)
+        custom_rate: newConsumer.custom_rate ? parseFloat(newConsumer.custom_rate) : null
       };
       const res = await axios.post(`${API_URL}/consumers/`, backendData);
       setConsumers([res.data, ...consumers]);
@@ -60,7 +62,9 @@ export const AppProvider = ({ children }) => {
         name: updatedData.name,
         mobile: updatedData.mobile,
         house_no: updatedData.house_no,
-        area: updatedData.area
+        area: updatedData.area,
+        // Send custom_rate
+        custom_rate: updatedData.custom_rate ? parseFloat(updatedData.custom_rate) : null
       };
       const res = await axios.put(`${API_URL}/consumers/${originalMobile}`, backendData);
       setConsumers(consumers.map(c => c.mobile === originalMobile ? res.data : c));

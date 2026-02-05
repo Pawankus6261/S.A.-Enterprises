@@ -7,6 +7,8 @@ class ConsumerBase(BaseModel):
     mobile: str
     house_no: Optional[str] = None
     area: Optional[str] = None
+    # --- NEW FIELD ---
+    custom_rate: Optional[float] = None 
 
 class ConsumerCreate(ConsumerBase):
     pass
@@ -22,7 +24,6 @@ class EntryCreate(BaseModel):
     mobile: str
     date: str
     qty: int
-    # Price is calculated on backend
 
 class EntryUpdate(BaseModel):
     date: str
@@ -38,6 +39,5 @@ class EntryResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# --- SETTINGS SCHEMA ---
 class RateUpdate(BaseModel):
     rate: float

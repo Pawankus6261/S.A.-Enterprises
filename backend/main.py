@@ -12,7 +12,8 @@ app = FastAPI()
 # Enable CORS (So React can talk to Python)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, change to ["http://localhost:5173"]
+    # Allow ALL origins. In production, change "*" to your specific Vercel URL.
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,6 +22,7 @@ app.add_middleware(
 @app.get("/")
 def root():
     return {"message": "Welcome to S.A. Enterprises"}
+
 # --- 1. CONSUMER ROUTES ---
 
 @app.post("/consumers/", response_model=schemas.ConsumerResponse)
@@ -59,18 +61,27 @@ def update_consumer(mobile: str, data: schemas.ConsumerCreate, db: Session = Dep
     db_consumer.house_no = data.house_no
     db_consumer.area = data.area
     
-    # Optional: If you want to allow changing mobile number, you need complex logic.
-    # For now, we update everything except the ID.
+    # --- UPDATE CUSTOM RATE ---
+    # We check if 'custom_rate' is present in the data sent from frontend
+    if hasattr(data, 'custom_rate'):
+        db_consumer.custom_rate = data.custom_rate
     
     db.commit()
     db.refresh(db_consumer)
     return db_consumer
 
+# --- 2. ENTRY ROUTES (Updated for Custom Rates) ---
+
 @app.post("/entries/", response_model=schemas.EntryResponse)
 def create_entry(entry: schemas.EntryCreate, db: Session = Depends(get_db)):
-    # Get Current Rate
+    # 1. Get Global Rate
     rate_setting = db.query(models.Setting).filter(models.Setting.key == "jar_rate").first()
     rate = float(rate_setting.value) if rate_setting else 20.0
+    
+    # 2. Check for Custom Rate (Consumer Specific)
+    consumer = db.query(models.Consumer).filter(models.Consumer.mobile == entry.mobile).first()
+    if consumer and consumer.custom_rate is not None:
+        rate = consumer.custom_rate
     
     total_price = entry.qty * rate
     
@@ -96,10 +107,16 @@ def update_entry(entry_id: int, entry: schemas.EntryUpdate, db: Session = Depend
     if not db_entry:
         raise HTTPException(status_code=404, detail="Entry not found")
     
-    # Recalculate Price
+    # 1. Get Global Rate
     rate_setting = db.query(models.Setting).filter(models.Setting.key == "jar_rate").first()
     rate = float(rate_setting.value) if rate_setting else 20.0
     
+    # 2. Check for Custom Rate (Consumer Specific)
+    consumer = db.query(models.Consumer).filter(models.Consumer.mobile == db_entry.mobile).first()
+    if consumer and consumer.custom_rate is not None:
+        rate = consumer.custom_rate
+    
+    # 3. Update Entry
     db_entry.qty = entry.qty
     db_entry.date = entry.date
     db_entry.price = entry.qty * rate
@@ -132,5 +149,3 @@ def update_rate(data: schemas.RateUpdate, db: Session = Depends(get_db)):
     
     db.commit()
     return {"message": "Rate updated", "rate": data.rate}
-
-

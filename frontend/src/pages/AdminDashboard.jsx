@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { LogOut, Plus, Search, Edit2, Trash2, X, ChevronLeft, ChevronRight, UserCheck, History, Eye, Settings, Minus, PlusCircle, Calendar, TrendingUp, Droplets, Wallet, MapPin, UserPlus, Users, Phone, Home, Save, ArrowRight, IndianRupee, MinusCircle, PlusSquare, MinusSquare } from 'lucide-react';
+import { LogOut, Plus, Search, Edit2, Trash2, X, ChevronLeft, ChevronRight, UserCheck, History, Eye, MinusSquare, PlusSquare, Wallet, TrendingUp, Users, Phone, MapPin, UserPlus, PlusCircle, Calendar, Home } from 'lucide-react';
 import saLogo from '../assets/LOGO.png'; 
 
 export default function AdminDashboard() {
@@ -29,7 +29,8 @@ export default function AdminDashboard() {
   const [editingId, setEditingId] = useState(null);
   
   // Forms
-  const [regForm, setRegForm] = useState({ name: '', mobile: '', house_no: '', area: '' });
+  // ADDED: custom_rate to regForm
+  const [regForm, setRegForm] = useState({ name: '', mobile: '', house_no: '', area: '', custom_rate: '' });
   const [entryForm, setEntryForm] = useState({ mobile: '', qty: 1, date: '' });
   const [entrySearch, setEntrySearch] = useState('');
   const [selectedConsumer, setSelectedConsumer] = useState(null); 
@@ -74,7 +75,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (registerConsumer(regForm)) {
       setModalType(null); 
-      setRegForm({ name: '', mobile: '', house_no: '', area: '' });
+      setRegForm({ name: '', mobile: '', house_no: '', area: '', custom_rate: '' });
       alert('Consumer Saved!');
     }
   };
@@ -89,14 +90,8 @@ export default function AdminDashboard() {
       }
   };
 
-  // --- NEW: DELETE HANDLER ---
   const handleDeleteConsumer = async () => {
-      // The deleteConsumer function in context usually handles the window.confirm
-      // If not, we can check here, but typically we just call it.
-      // We pass the 'editingId' because that holds the mobile number when in edit mode.
       await deleteConsumer(editingId);
-      
-      // Close everything
       setModalType(null);
       setEditingId(null);
       setViewingCustomer(null);
@@ -107,7 +102,8 @@ export default function AdminDashboard() {
           name: viewingCustomer.name,
           mobile: viewingCustomer.mobile,
           house_no: viewingCustomer.house_no || '', 
-          area: viewingCustomer.area || ''
+          area: viewingCustomer.area || '',
+          custom_rate: viewingCustomer.custom_rate || '' // Pre-fill custom rate
       });
       setEditingId(viewingCustomer.mobile); 
       setViewingCustomer(null); 
@@ -148,7 +144,9 @@ export default function AdminDashboard() {
   const openEditEntry = (entry) => {
     setEditingId(entry.id);
     setEntryForm({ mobile: entry.mobile, qty: entry.qty, date: entry.date });
-    setSelectedConsumer({ name: entry.name, mobile: entry.mobile }); 
+    // Find consumer to allow rate calculation preview
+    const c = consumers.find(x => x.mobile === entry.mobile);
+    setSelectedConsumer(c || { name: entry.name, mobile: entry.mobile }); 
     setModalType('edit_entry');
   };
 
@@ -166,6 +164,12 @@ export default function AdminDashboard() {
       setModalType(null);
       setEditingId(null);
       setSelectedConsumer(null);
+  };
+
+  // HELPER: Get effective rate for display
+  const getEffectiveRate = (consumer) => {
+      if (consumer && consumer.custom_rate) return consumer.custom_rate;
+      return jarRate;
   };
 
   return (
@@ -191,7 +195,7 @@ export default function AdminDashboard() {
           
           <div className="w-full md:w-auto flex justify-center">
               <div className="flex items-center gap-4 bg-slate-900/5 border border-white/50 px-4 py-2 rounded-xl backdrop-blur-md">
-                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Rate:</span>
+                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Global Rate:</span>
                  <div className="flex items-center gap-3">
                     <button onClick={() => updateRate(jarRate - 1)} className="text-slate-500 hover:text-red-500 active:scale-90 transition"><MinusSquare size={24} strokeWidth={2}/></button>
                     <div className="min-w-[40px] text-center">
@@ -284,7 +288,7 @@ export default function AdminDashboard() {
                         <Search className="absolute left-4 top-3.5 text-slate-400" size={20} />
                         <input placeholder="Find registered consumers..." className="w-full pl-12 pr-4 py-4 bg-white/80 backdrop-blur border border-white/50 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500/50" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
                     </div>
-                    <button onClick={() => setModalType('register')} className="bg-blue-600 text-white px-6 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 shadow-xl shadow-blue-200 active:scale-95 transition-all">
+                    <button onClick={() => { setModalType('register'); setRegForm({ name: '', mobile: '', house_no: '', area: '', custom_rate: '' }); }} className="bg-blue-600 text-white px-6 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 shadow-xl shadow-blue-200 active:scale-95 transition-all">
                         <UserPlus size={20}/> <span className="hidden md:inline">Register New</span>
                         <span className="md:hidden">New</span>
                     </button>
@@ -299,6 +303,11 @@ export default function AdminDashboard() {
                                     <Home size={12} className="text-blue-400"/>
                                     <span className="truncate max-w-[150px]">{c.house_no ? `#${c.house_no}, ` : ''}{c.area}</span>
                                 </div>
+                                {c.custom_rate && (
+                                     <span className="mt-2 inline-block bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                         Custom Rate: ₹{c.custom_rate}
+                                     </span>
+                                )}
                             </div>
                             <div className="flex flex-col gap-2 ml-2">
                                 <button onClick={() => setViewingCustomer(c)} className="p-2 text-purple-500 bg-purple-50 hover:bg-purple-100 rounded-xl transition"><Eye size={18}/></button>
@@ -325,16 +334,25 @@ export default function AdminDashboard() {
                     <div className="col-span-2"><label className="text-xs font-bold text-slate-400 uppercase ml-1">Area / Colony</label><input required className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500/20" value={regForm.area} onChange={e => setRegForm({...regForm, area: e.target.value})} /></div>
                 </div>
                 
-                {/* BUTTONS CONTAINER */}
+                {/* --- CUSTOM RATE FIELD --- */}
+                <div>
+                     <label className="text-xs font-bold text-slate-400 uppercase ml-1">Custom Rate (Optional)</label>
+                     <input 
+                        type="number" 
+                        placeholder={`Default: ₹${jarRate}`} 
+                        className="w-full p-3 bg-yellow-50 border border-yellow-100 text-yellow-800 placeholder:text-yellow-800/40 rounded-xl font-bold outline-none focus:ring-2 focus:ring-yellow-500/20" 
+                        value={regForm.custom_rate} 
+                        onChange={e => setRegForm({...regForm, custom_rate: e.target.value})} 
+                     />
+                     <p className="text-[10px] text-slate-400 ml-1 mt-1">Leave empty to use global rate.</p>
+                </div>
+
                 <div className="flex gap-3 mt-4">
-                    {/* DELETE CONSUMER BUTTON (Only in Edit Mode) */}
                     {modalType === 'edit_consumer' && (
                         <button type="button" onClick={handleDeleteConsumer} className="flex-1 bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-200 transition">
                             <Trash2 size={18}/> Delete
                         </button>
                     )}
-                    
-                    {/* SAVE / UPDATE BUTTON */}
                     <button type="submit" className="flex-[2] bg-slate-900 text-white py-3 rounded-xl font-bold text-lg shadow-lg hover:bg-slate-800 transition">
                         {modalType === 'edit_consumer' ? 'Update Profile' : 'Save Consumer'}
                     </button>
@@ -367,16 +385,30 @@ export default function AdminDashboard() {
                     ) : (
                         <form onSubmit={modalType === 'edit_entry' ? handleEditEntrySubmit : handleEntrySubmit} className="space-y-4">
                             <div className="bg-blue-50 p-3 rounded-xl flex justify-between items-center">
-                                <div><p className="font-black text-sm">{selectedConsumer.name}</p><p className="text-xs text-slate-500">{selectedConsumer.mobile}</p></div>
+                                <div>
+                                    <p className="font-black text-sm">{selectedConsumer.name}</p>
+                                    <p className="text-xs text-slate-500">{selectedConsumer.mobile}</p>
+                                </div>
                                 {modalType !== 'edit_entry' && <button type="button" onClick={() => setSelectedConsumer(null)} className="text-xs text-red-500 font-bold">Change</button>}
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div><label className="text-xs font-bold text-slate-400">Date</label><input type="date" required className="w-full p-3 bg-slate-50 rounded-xl font-bold" value={entryForm.date} onChange={e => setEntryForm({...entryForm, date: e.target.value})} /></div>
                                 <div><label className="text-xs font-bold text-slate-400">Qty</label><input type="number" min="1" autoFocus required className="w-full p-3 bg-slate-50 rounded-xl font-black text-center" value={entryForm.qty} onChange={e => setEntryForm({...entryForm, qty: e.target.value})} /></div>
                             </div>
+                            
+                            {/* --- DYNAMIC RATE PREVIEW --- */}
                             <div className="flex justify-between items-center bg-slate-100 p-3 rounded-xl">
-                                <span className="text-xs font-bold text-slate-500">Total</span><span className="text-xl font-black text-blue-600">₹{entryForm.qty * jarRate}</span>
+                                <div>
+                                    <span className="text-xs font-bold text-slate-500">Total Calculation</span>
+                                    {selectedConsumer?.custom_rate ? (
+                                        <p className="text-[10px] text-yellow-600 font-bold">Using Custom Rate: ₹{selectedConsumer.custom_rate}</p>
+                                    ) : (
+                                        <p className="text-[10px] text-slate-400 font-bold">Using Global Rate: ₹{jarRate}</p>
+                                    )}
+                                </div>
+                                <span className="text-xl font-black text-blue-600">₹{entryForm.qty * getEffectiveRate(selectedConsumer)}</span>
                             </div>
+
                             <div className="flex gap-3 mt-2">
                                 {modalType === 'edit_entry' && (
                                     <button type="button" onClick={handleDeleteEntry} className="flex-1 bg-red-100 text-red-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-200 transition">
@@ -393,7 +425,7 @@ export default function AdminDashboard() {
              </div>
         )}
 
-        {/* 3. PRO PROFILE MODAL */}
+        {/* 3. PRO PROFILE MODAL (Existing code with rate logic) */}
         {viewingCustomer && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in">
             <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden h-[85vh] md:h-auto md:max-h-[90vh] flex flex-col relative">
@@ -408,6 +440,14 @@ export default function AdminDashboard() {
                         </button>
                     </div>
                     <h2 className="text-3xl font-black leading-tight">{viewingCustomer.name}</h2>
+                    
+                    {/* SHOW CUSTOM RATE BADGE */}
+                    {viewingCustomer.custom_rate && (
+                        <div className="mt-2 inline-flex items-center gap-1.5 bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-3 py-1 rounded-full text-xs font-bold">
+                            <Wallet size={12}/> Custom Rate Active: ₹{viewingCustomer.custom_rate}/jar
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 gap-2 mt-4">
                         <div className="flex items-center gap-3 bg-white/10 p-2.5 rounded-xl border border-white/10 backdrop-blur-md">
                             <div className="bg-green-500/20 p-1.5 rounded-lg text-green-400"><Phone size={16}/></div>
