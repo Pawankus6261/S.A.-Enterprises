@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { User, Lock, Eye, EyeOff, ArrowRight, ChevronLeft, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
-import saLogo from '../assets/logo.png'; 
+import saLogo from '../assets/LOGO.png'; 
 
 export default function AdminLogin() {
     const [creds, setCreds] = useState({ username: '', password: '' });

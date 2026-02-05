@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { LogOut, Droplet, Calendar, MapPin, Wallet, Phone, MessageCircle, History, Sparkles, User, IndianRupee } from 'lucide-react';
-import saLogo from '../assets/logo.png';
+import saLogo from '../assets/LOGO.png';
 
 export default function ConsumerDashboard() {
   const { entries, user, consumers, logout } = useApp();

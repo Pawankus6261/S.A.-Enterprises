@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { LogOut, Plus, Search, Edit2, Trash2, X, ChevronLeft, ChevronRight, UserCheck, History, Eye, Settings, Minus, PlusCircle, Calendar, TrendingUp, Droplets, Wallet, MapPin, UserPlus, Users, Phone, Home, Save, ArrowRight, IndianRupee, MinusCircle, PlusSquare, MinusSquare } from 'lucide-react';
-import saLogo from '../assets/logo.png'; 
+import saLogo from '../assets/LOGO.png'; 
 
 export default function AdminDashboard() {
   const { 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { User, Smartphone, ArrowRight, ChevronLeft, AlertCircle, CheckCircle2, Loader2, Sparkles, Fingerprint, ShieldCheck, Lock } from 'lucide-react';
-import saLogo from '../assets/logo.png'; 
+import saLogo from '../assets/LOGO.png'; 
 
 export default function ConsumerLogin() {
     // 1. GET DATA
