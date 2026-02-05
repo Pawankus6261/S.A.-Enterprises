@@ -6,18 +6,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Format: postgresql://user:password@localhost/dbname
-# Change 'postgres' and 'password' to your actual credentials
-# NOTE: Special characters in password must be URL-encoded (e.g., @ -> %40)
-# Or use urllib.parse.quote_plus
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://sa_enterprises_user:MEp2smPzyxkNBAZZsH34JVZnS5vYegG5@dpg-d628njcr85hc73dg3qhg-a.virginia-postgres.render.com/sa_enterprises")
+database_url = os.getenv("DATABASE_URL")
+if not database_url:
+    database_url = "sqlite:///./test.db" 
+    print("WARNING: DATABASE_URL not found. Using local sqlite for testing.")   
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-# Dependency to get DB session
 def get_db():
     db = SessionLocal()
     try:

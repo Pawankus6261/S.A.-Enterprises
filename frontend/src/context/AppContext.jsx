@@ -1,28 +1,29 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios'; // Ensure you install axios: npm install axios
+import axios from 'axios';
 
 const AppContext = createContext();
-// Use VITE_API_URL if defined (prod), else localhost (dev)
-const API_URL = import.meta.env.VITE_API_URL || "https://s-a-enterprises.onrender.com/";
+
+// FIX: Remove trailing slash. 
+// If VITE_API_URL is missing, it defaults to your Render URL (ensure no trailing slash there either)
+const API_URL = (import.meta.env.VITE_API_URL || "https://s-a-enterprises.onrender.com").replace(/\/$/, "");
 
 export const AppProvider = ({ children }) => {
   const [consumers, setConsumers] = useState([]);
   const [entries, setEntries] = useState([]);
   const [jarRate, setJarRate] = useState(20);
 
-  // Auth state is usually local, but verification happens on backend
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('sa_user');
     return saved ? JSON.parse(saved) : null;
   });
 
-  // --- FETCH DATA ON LOAD ---
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
+      // API_URL has no slash, so we add it here: /consumers/
       const cRes = await axios.get(`${API_URL}/consumers/`);
       setConsumers(cRes.data);
 
@@ -36,19 +37,14 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // --- ACTIONS ---
-
   const registerConsumer = async (newConsumer) => {
     try {
-      // --- THE FIX IS HERE ---
-      // We create a new object that matches the Python database names
       const backendData = {
         name: newConsumer.name,
         mobile: newConsumer.mobile,
         house_no: newConsumer.house_no,
         area: newConsumer.area
       };
-
       const res = await axios.post(`${API_URL}/consumers/`, backendData);
       setConsumers([res.data, ...consumers]);
       return true;
@@ -57,20 +53,16 @@ export const AppProvider = ({ children }) => {
       return false;
     }
   };
+
   const updateConsumer = async (originalMobile, updatedData) => {
     try {
-      // 1. Map data to match Python (houseNo -> house_no)
       const backendData = {
         name: updatedData.name,
         mobile: updatedData.mobile,
         house_no: updatedData.house_no,
         area: updatedData.area
       };
-
-      // 2. Send PUT request
       const res = await axios.put(`${API_URL}/consumers/${originalMobile}`, backendData);
-
-      // 3. Update Local List instantly
       setConsumers(consumers.map(c => c.mobile === originalMobile ? res.data : c));
       return true;
     } catch (err) {
@@ -79,6 +71,7 @@ export const AppProvider = ({ children }) => {
       return false;
     }
   };
+
   const deleteConsumer = async (mobile) => {
     if (window.confirm('Delete consumer?')) {
       await axios.delete(`${API_URL}/consumers/${mobile}`);
@@ -112,7 +105,6 @@ export const AppProvider = ({ children }) => {
     setJarRate(newRate);
   };
 
-  // --- AUTH ---
   const loginAdmin = (u, p) => {
     if (u === 'admin' && p === '1234') {
       const adminUser = { role: 'admin', name: 'Owner' };
@@ -124,7 +116,6 @@ export const AppProvider = ({ children }) => {
   };
 
   const loginConsumer = (name, mobile) => {
-    // Logic: Ensure they exist in our DB first
     const exists = consumers.find(c => c.mobile === mobile);
     if (exists) {
       const consumerUser = { role: 'consumer', name: exists.name, mobile: exists.mobile };
@@ -144,9 +135,8 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       consumers, entries, user, jarRate,
       loginAdmin, loginConsumer, logout,
-      registerConsumer, deleteConsumer,
-      addEntry, editEntry, deleteEntry, updateRate,
-      updateConsumer // <--- MAKE SURE THIS IS HERE!
+      registerConsumer, deleteConsumer, updateConsumer,
+      addEntry, editEntry, deleteEntry, updateRate
     }}>
       {children}
     </AppContext.Provider>

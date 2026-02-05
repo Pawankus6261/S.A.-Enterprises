@@ -12,12 +12,11 @@ app = FastAPI()
 # Enable CORS (So React can talk to Python)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"], # In production, change to ["http://localhost:5173"]
+    allow_origins=["*"], # In production, change to ["http://localhost:5173"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/")
 def root():
