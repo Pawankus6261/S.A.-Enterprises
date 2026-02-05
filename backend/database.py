@@ -10,9 +10,7 @@ load_dotenv()
 # Change 'postgres' and 'password' to your actual credentials
 # NOTE: Special characters in password must be URL-encoded (e.g., @ -> %40)
 # Or use urllib.parse.quote_plus
-import urllib.parse
-password = urllib.parse.quote_plus("Pawan@2008") 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", f"postgresql://postgres:{password}@localhost/sa_enterprises")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", f"postgresql://sa_enterprises_user:MEp2smPzyxkNBAZZsH34JVZnS5vYegG5@dpg-d628njcr85hc73dg3qhg-a.virginia-postgres.render.com/sa_enterprises")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
