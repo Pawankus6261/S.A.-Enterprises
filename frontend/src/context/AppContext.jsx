@@ -3,14 +3,15 @@ import axios from 'axios';
 
 const AppContext = createContext();
 
-// FIX: Remove trailing slash. 
-// If VITE_API_URL is missing, it defaults to your Render URL (ensure no trailing slash there either)
-const API_URL = (import.meta.env.VITE_API_URL || "https://s-a-enterprises.onrender.com").replace(/\/$/, "");
+// Ensure this matches your backend URL. Using logic from your previous file.
+const API_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 
 export const AppProvider = ({ children }) => {
   const [consumers, setConsumers] = useState([]);
   const [entries, setEntries] = useState([]);
-  const [jarRate, setJarRate] = useState(20);
+  
+  // NEW: Store both rates as an object
+  const [rates, setRates] = useState({ normal: 20, chilled: 30 });
 
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('sa_user');
@@ -23,15 +24,21 @@ export const AppProvider = ({ children }) => {
 
   const fetchData = async () => {
     try {
-      // API_URL has no slash, so we add it here: /consumers/
       const cRes = await axios.get(`${API_URL}/consumers/`);
       setConsumers(cRes.data);
 
       const eRes = await axios.get(`${API_URL}/entries/`);
       setEntries(eRes.data);
 
-      const rRes = await axios.get(`${API_URL}/rate`);
-      setJarRate(rRes.data.rate);
+      // NEW: Fetch both rates from the new endpoint
+      try {
+        const rRes = await axios.get(`${API_URL}/rates`);
+        if (rRes.data) {
+            setRates(rRes.data);
+        }
+      } catch (e) {
+          console.warn("Could not fetch rates, using defaults.");
+      }
     } catch (err) {
       console.error("API Error:", err);
     }
@@ -44,7 +51,6 @@ export const AppProvider = ({ children }) => {
         mobile: newConsumer.mobile,
         house_no: newConsumer.house_no,
         area: newConsumer.area,
-        // Send custom_rate (convert to float or null)
         custom_rate: newConsumer.custom_rate ? parseFloat(newConsumer.custom_rate) : null
       };
       const res = await axios.post(`${API_URL}/consumers/`, backendData);
@@ -63,15 +69,21 @@ export const AppProvider = ({ children }) => {
         mobile: updatedData.mobile,
         house_no: updatedData.house_no,
         area: updatedData.area,
-        // Send custom_rate
         custom_rate: updatedData.custom_rate ? parseFloat(updatedData.custom_rate) : null
       };
+      
       const res = await axios.put(`${API_URL}/consumers/${originalMobile}`, backendData);
       setConsumers(consumers.map(c => c.mobile === originalMobile ? res.data : c));
+      
+      // If mobile changed, update local entries too to keep UI consistent without refresh
+      if (originalMobile !== updatedData.mobile) {
+          setEntries(entries.map(e => 
+              e.mobile === originalMobile ? { ...e, mobile: updatedData.mobile } : e
+          ));
+      }
       return true;
     } catch (err) {
-      console.error("Update Failed:", err);
-      alert("Update Failed");
+      alert(err.response?.data?.detail || "Update Failed");
       return false;
     }
   };
@@ -85,14 +97,28 @@ export const AppProvider = ({ children }) => {
 
   const addEntry = async (entryData) => {
     try {
-      const res = await axios.post(`${API_URL}/entries/`, entryData);
+      // Send Type, Price, and Paid Status
+      const payload = {
+          ...entryData,
+          type: entryData.type || 'normal',
+          price: entryData.price,
+          is_paid: false // New entries default to unpaid
+      };
+      const res = await axios.post(`${API_URL}/entries/`, payload);
       setEntries([res.data, ...entries]);
     } catch (err) { console.error(err); }
   };
 
   const editEntry = async (id, updatedData) => {
     try {
-      const res = await axios.put(`${API_URL}/entries/${id}`, updatedData);
+      const payload = {
+          qty: updatedData.qty,
+          date: updatedData.date,
+          type: updatedData.type || 'normal',
+          price: updatedData.price,
+          is_paid: updatedData.is_paid 
+      };
+      const res = await axios.put(`${API_URL}/entries/${id}`, payload);
       setEntries(entries.map(e => e.id === id ? res.data : e));
     } catch (err) { console.error(err); }
   };
@@ -104,9 +130,37 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const updateRate = async (newRate) => {
-    await axios.post(`${API_URL}/rate`, { rate: newRate });
-    setJarRate(newRate);
+  // NEW: Function to update both global rates
+  const updateGlobalRates = async (newNormal, newChilled) => {
+    try {
+        await axios.post(`${API_URL}/rates`, { normal: newNormal, chilled: newChilled });
+        setRates({ normal: newNormal, chilled: newChilled });
+    } catch (err) {
+        console.error("Failed to update rates", err);
+    }
+  };
+
+  // NEW: Function to mark a whole month as PAID/UNPAID
+  const markMonthPaid = async (mobile, month, status) => {
+    try {
+      await axios.put(`${API_URL}/payments/mark-month`, {
+        mobile,
+        month,   // "YYYY-MM"
+        status   // true (paid) or false (unpaid)
+      });
+      
+      // Update local state immediately so UI refreshes the stamp
+      setEntries(entries.map(e => {
+        if (e.mobile === mobile && e.date.startsWith(month)) {
+          return { ...e, is_paid: status };
+        }
+        return e;
+      }));
+      return true;
+    } catch (err) {
+      console.error("Payment Update Failed:", err);
+      return false;
+    }
   };
 
   const loginAdmin = (u, p) => {
@@ -137,10 +191,11 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      consumers, entries, user, jarRate,
+      consumers, entries, user, rates, 
       loginAdmin, loginConsumer, logout,
       registerConsumer, deleteConsumer, updateConsumer,
-      addEntry, editEntry, deleteEntry, updateRate
+      addEntry, editEntry, deleteEntry, updateGlobalRates,
+      markMonthPaid // <--- Exported for use in Dashboard
     }}>
       {children}
     </AppContext.Provider>

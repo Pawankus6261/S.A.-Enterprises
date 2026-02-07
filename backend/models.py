@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, func
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, func
 from database import Base
 
 class Consumer(Base):
@@ -9,7 +9,6 @@ class Consumer(Base):
     mobile = Column(String, unique=True, index=True, nullable=False)
     house_no = Column(String, nullable=True)
     area = Column(String, nullable=True)
-    # --- NEW COLUMN ---
     custom_rate = Column(Float, nullable=True) 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -22,6 +21,11 @@ class Entry(Base):
     date = Column(String, nullable=False)
     qty = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
+    
+    # --- NEW COLUMNS ---
+    type = Column(String, default="normal") # 'normal' or 'chilled'
+    is_paid = Column(Boolean, default=False) # True = Paid, False = Unpaid
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Setting(Base):
