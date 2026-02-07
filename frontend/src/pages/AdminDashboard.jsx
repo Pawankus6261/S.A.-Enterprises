@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { LogOut, Plus, Search, Edit2, Trash2, X, ChevronLeft, ChevronRight, UserCheck, History, Eye, MinusSquare, PlusSquare, Wallet, TrendingUp, Users, Phone, MapPin, UserPlus, PlusCircle, Calendar, Home, Snowflake, FileText, Printer, Share2 } from 'lucide-react';
-import saLogo from '../assets/logo.png'; 
+import saLogo from '../assets/lOGO.png'; 
 import paidStampImg from '../assets/paid_stamp.png'; 
 import unpaidStampImg from '../assets/unpaid_stamp.png'; 
 
