@@ -3,14 +3,13 @@ import axios from 'axios';
 
 const AppContext = createContext();
 
-// Ensure this matches your backend URL. Using logic from your previous file.
 const API_URL = (import.meta.env.VITE_API_URL || "https://s-a-enterprises.onrender.com").replace(/\/$/, "");
 
 export const AppProvider = ({ children }) => {
   const [consumers, setConsumers] = useState([]);
   const [entries, setEntries] = useState([]);
-  
-  // NEW: Store both rates as an object
+
+  // FIXED: Store rates as an object to prevent crash in Dashboard
   const [rates, setRates] = useState({ normal: 20, chilled: 30 });
 
   const [user, setUser] = useState(() => {
@@ -30,14 +29,13 @@ export const AppProvider = ({ children }) => {
       const eRes = await axios.get(`${API_URL}/entries/`);
       setEntries(eRes.data);
 
-      // NEW: Fetch both rates from the new endpoint
       try {
         const rRes = await axios.get(`${API_URL}/rates`);
         if (rRes.data) {
-            setRates(rRes.data);
+          setRates(rRes.data);
         }
       } catch (e) {
-          console.warn("Could not fetch rates, using defaults.");
+        console.warn("Using default rates");
       }
     } catch (err) {
       console.error("API Error:", err);
@@ -57,7 +55,7 @@ export const AppProvider = ({ children }) => {
       setConsumers([res.data, ...consumers]);
       return true;
     } catch (err) {
-      alert(err.response?.data?.detail || "Registration Failed");
+      console.error(err.response?.data?.detail || "Registration Failed");
       return false;
     }
   };
@@ -71,38 +69,36 @@ export const AppProvider = ({ children }) => {
         area: updatedData.area,
         custom_rate: updatedData.custom_rate ? parseFloat(updatedData.custom_rate) : null
       };
-      
+
       const res = await axios.put(`${API_URL}/consumers/${originalMobile}`, backendData);
       setConsumers(consumers.map(c => c.mobile === originalMobile ? res.data : c));
-      
-      // If mobile changed, update local entries too to keep UI consistent without refresh
+
       if (originalMobile !== updatedData.mobile) {
-          setEntries(entries.map(e => 
-              e.mobile === originalMobile ? { ...e, mobile: updatedData.mobile } : e
-          ));
+        setEntries(entries.map(e =>
+          e.mobile === originalMobile ? { ...e, mobile: updatedData.mobile } : e
+        ));
       }
       return true;
     } catch (err) {
-      alert(err.response?.data?.detail || "Update Failed");
+      console.error(err.response?.data?.detail || "Update Failed");
       return false;
     }
   };
 
   const deleteConsumer = async (mobile) => {
-    if (window.confirm('Delete consumer?')) {
+    try {
       await axios.delete(`${API_URL}/consumers/${mobile}`);
       setConsumers(consumers.filter(c => c.mobile !== mobile));
-    }
+    } catch (err) { console.error("Delete Failed:", err); }
   };
 
   const addEntry = async (entryData) => {
     try {
-      // Send Type, Price, and Paid Status
       const payload = {
-          ...entryData,
-          type: entryData.type || 'normal',
-          price: entryData.price,
-          is_paid: false // New entries default to unpaid
+        ...entryData,
+        type: entryData.type || 'normal',
+        price: entryData.price,
+        is_paid: false
       };
       const res = await axios.post(`${API_URL}/entries/`, payload);
       setEntries([res.data, ...entries]);
@@ -112,11 +108,11 @@ export const AppProvider = ({ children }) => {
   const editEntry = async (id, updatedData) => {
     try {
       const payload = {
-          qty: updatedData.qty,
-          date: updatedData.date,
-          type: updatedData.type || 'normal',
-          price: updatedData.price,
-          is_paid: updatedData.is_paid 
+        qty: updatedData.qty,
+        date: updatedData.date,
+        type: updatedData.type || 'normal',
+        price: updatedData.price,
+        is_paid: updatedData.is_paid
       };
       const res = await axios.put(`${API_URL}/entries/${id}`, payload);
       setEntries(entries.map(e => e.id === id ? res.data : e));
@@ -124,32 +120,23 @@ export const AppProvider = ({ children }) => {
   };
 
   const deleteEntry = async (id) => {
-    if (window.confirm('Delete this entry?')) {
+    try {
       await axios.delete(`${API_URL}/entries/${id}`);
       setEntries(entries.filter(e => e.id !== id));
-    }
+    } catch (err) { console.error("Delete Failed:", err); }
   };
 
-  // NEW: Function to update both global rates
   const updateGlobalRates = async (newNormal, newChilled) => {
     try {
-        await axios.post(`${API_URL}/rates`, { normal: newNormal, chilled: newChilled });
-        setRates({ normal: newNormal, chilled: newChilled });
-    } catch (err) {
-        console.error("Failed to update rates", err);
-    }
+      await axios.post(`${API_URL}/rates`, { normal: newNormal, chilled: newChilled });
+      setRates({ normal: newNormal, chilled: newChilled });
+    } catch (err) { console.error(err); }
   };
 
-  // NEW: Function to mark a whole month as PAID/UNPAID
+  // FIXED: Added this function which was missing
   const markMonthPaid = async (mobile, month, status) => {
     try {
-      await axios.put(`${API_URL}/payments/mark-month`, {
-        mobile,
-        month,   // "YYYY-MM"
-        status   // true (paid) or false (unpaid)
-      });
-      
-      // Update local state immediately so UI refreshes the stamp
+      await axios.put(`${API_URL}/payments/mark-month`, { mobile, month, status });
       setEntries(entries.map(e => {
         if (e.mobile === mobile && e.date.startsWith(month)) {
           return { ...e, is_paid: status };
@@ -191,11 +178,11 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      consumers, entries, user, rates, 
+      consumers, entries, user, rates,
       loginAdmin, loginConsumer, logout,
       registerConsumer, deleteConsumer, updateConsumer,
       addEntry, editEntry, deleteEntry, updateGlobalRates,
-      markMonthPaid // <--- Exported for use in Dashboard
+      markMonthPaid
     }}>
       {children}
     </AppContext.Provider>

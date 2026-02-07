@@ -1,36 +1,35 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { LogOut, Droplet, Calendar, Wallet, Phone, MessageCircle, History, Sparkles, IndianRupee, MapPin, X, ChevronUp, FileText, Printer, Share2, Snowflake } from 'lucide-react';
+import { LogOut, Droplet, Calendar, Wallet, Phone, MessageCircle, History, Sparkles, IndianRupee, MapPin, X, ChevronUp, FileText, Printer, Share2, Snowflake, AlertCircle, CheckCircle } from 'lucide-react';
 import saLogo from '../assets/LOGO.png';
 import unpaidStampImg from '../assets/unpaid_stamp.png';
-import paidStampImg from '../assets/paid_stamp.png'; 
+import paidStampImg from '../assets/paid_stamp.png';
 
 export default function ConsumerDashboard() {
   const { entries, user, consumers, logout } = useApp();
   const [showFloatingMenu, setShowFloatingMenu] = useState(false);
+  const [notification, setNotification] = useState(null); // TOAST STATE
   
   // --- INVOICE STATE ---
   const [showInvoice, setShowInvoice] = useState(false);
   const [invoiceMonth, setInvoiceMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
 
-  // --- NEW: BACK BUTTON HANDLER ---
-  useEffect(() => {
-    // If invoice or floating menu is open
-    if (showInvoice || showFloatingMenu) {
-      // 1. Push fake state
-      window.history.pushState(null, document.title, window.location.href);
+  // --- TOAST HELPER ---
+  const showToast = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
-      // 2. Listen for back action
+  // --- BACK BUTTON HANDLER ---
+  useEffect(() => {
+    if (showInvoice || showFloatingMenu) {
+      window.history.pushState(null, document.title, window.location.href);
       const handlePopState = () => {
         if (showInvoice) setShowInvoice(false);
         if (showFloatingMenu) setShowFloatingMenu(false);
       };
-
       window.addEventListener('popstate', handlePopState);
-
-      return () => {
-        window.removeEventListener('popstate', handlePopState);
-      };
+      return () => { window.removeEventListener('popstate', handlePopState); };
     }
   }, [showInvoice, showFloatingMenu]);
 
@@ -52,7 +51,6 @@ export default function ConsumerDashboard() {
     return {
       monthDue: thisMonthData.reduce((acc, curr) => acc + curr.price, 0),
       totalJars: myData.reduce((acc, curr) => acc + curr.qty, 0),
-      // Removed lifetimeSpent calculation as tile is removed
     };
   }, [myData]);
 
@@ -65,7 +63,6 @@ export default function ConsumerDashboard() {
 
   const invoiceTotal = invoiceData.reduce((sum, item) => sum + item.price, 0);
   
-  // Check if invoice is fully paid (for stamp display)
   const isInvoicePaid = useMemo(() => {
       if (invoiceData.length === 0) return false;
       return invoiceData.every(item => item.is_paid);
@@ -78,10 +75,19 @@ export default function ConsumerDashboard() {
 
   const handlePrint = () => {
       window.print();
+      showToast("Preparing PDF for download...");
   };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200 relative overflow-hidden flex justify-center">
+
+      {/* --- TOAST NOTIFICATION --- */}
+      {notification && (
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-3 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-900 text-white'}`}>
+            {notification.type === 'error' ? <AlertCircle size={20}/> : <CheckCircle size={20}/>}
+            <span className="font-bold text-sm">{notification.message}</span>
+        </div>
+      )}
 
       {/* --- ANIMATED BACKGROUND --- */}
       <div className="fixed top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-[100px] animate-pulse pointer-events-none z-0"></div>
@@ -113,9 +119,8 @@ export default function ConsumerDashboard() {
         {/* --- DASHBOARD CONTENT (Hidden if showing Invoice) --- */}
         {!showInvoice ? (
             <>
-                {/* 2. STATS TILES (UPDATED: 2 Tiles Only) */}
+                {/* 2. STATS TILES (2 TILES ONLY) */}
                 <div className="grid grid-cols-2 gap-3 mb-4 shrink-0">
-                  {/* Large Tile: Due Amount */}
                   <div className="col-span-2 bg-slate-900 rounded-3xl p-5 text-white shadow-xl shadow-slate-200 relative overflow-hidden flex justify-between items-center">
                     <div className="absolute top-0 right-0 p-3 opacity-10"><Wallet size={80} /></div>
                     <div>
@@ -127,7 +132,6 @@ export default function ConsumerDashboard() {
                     </div>
                   </div>
 
-                  {/* Wide Tile: Total Jars (Spans full width now since Paid is removed, or can be 1/2 if you want to add something else) */}
                   <div className="col-span-2 bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-white/50 flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-4">
                         <div className="bg-blue-100 w-10 h-10 rounded-xl flex items-center justify-center text-blue-600"><Droplet size={20} /></div>
@@ -136,7 +140,6 @@ export default function ConsumerDashboard() {
                             <p className="text-2xl font-black text-slate-800 leading-none">{stats.totalJars}</p>
                         </div>
                     </div>
-                    {/* Visual graph line or decoration could go here */}
                     <div className="h-1 w-16 bg-blue-100 rounded-full overflow-hidden">
                         <div className="h-full bg-blue-500 w-2/3 rounded-full"></div>
                     </div>
@@ -295,7 +298,7 @@ export default function ConsumerDashboard() {
                     </a>
 
                     <a 
-                        href="[https://wa.me/917060456251?text=Hello%20bhaiya,%20mujhe%20apne%20bill/hisab%20ke%20baare%20mein%20baat%20karni%20hai](https://wa.me/917060456251?text=Hello%20bhaiya,%20mujhe%20apne%20bill/hisab%20ke%20baare%20mein%20baat%20karni%20hai)"
+                        href="https://wa.me/917060456251?text=Hello%20bhaiya,%20mujhe%20apne%20bill/hisab%20ke%20baare%20mein%20baat%20karni%20hai"
                         target="_blank" rel="noreferrer"
                         className="flex items-center gap-2 bg-green-600 text-white pl-4 pr-3 py-3 rounded-full shadow-lg shadow-green-400/40 hover:bg-green-700 transition transform hover:scale-105"
                     >
