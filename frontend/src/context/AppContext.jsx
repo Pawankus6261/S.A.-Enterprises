@@ -4,7 +4,7 @@ import axios from 'axios';
 const AppContext = createContext();
 
 // Ensure this matches your backend URL. Using logic from your previous file.
-const API_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+const API_URL = (import.meta.env.VITE_API_URL || "https://s-a-enterprises.onrender.com").replace(/\/$/, "");
 
 export const AppProvider = ({ children }) => {
   const [consumers, setConsumers] = useState([]);
